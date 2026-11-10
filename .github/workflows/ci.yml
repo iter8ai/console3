@@ -1,7 +1,25 @@
 name: CI
-on: workflow_dispatch
+on: push
+permissions:
+  contents: read
 jobs:
-  placeholder:
+  ci:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Placeholder: the skeleton build replaces this workflow."
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Format
+        run: test -z "$(gofmt -l .)"
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.15
+      - name: Vet
+        run: go vet ./...
+      - name: Test
+        run: go test -race ./...
+      - name: Build
+        run: go build -o bin/console3 ./cmd/console3
+      - name: Smoke test
+        run: ./bin/console3 --help
